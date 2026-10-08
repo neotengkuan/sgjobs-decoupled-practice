@@ -28,9 +28,9 @@ export function fmtCurrency(value) {
   return isMissing(value) ? 'N/A' : `S$${NUMBER_FORMAT.format(value)}`
 }
 
-/** 0.0834 -> "8.3%"; null -> "N/A" */
-export function fmtPercent(value) {
-  return isMissing(value) ? 'N/A' : `${(value * 100).toFixed(1)}%`
+/** 0.0834 -> "8.3%"; null -> "N/A". places=2 gives "8.34%". */
+export function fmtPercent(value, places = 1) {
+  return isMissing(value) ? 'N/A' : `${(value * 100).toFixed(places)}%`
 }
 
 /** 61.24 -> "61.2", 2 decimals -> "61.24"; null -> "N/A" */

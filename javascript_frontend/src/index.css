@@ -362,6 +362,11 @@ code {
   font-size: 15px;
 }
 
+/* Full-width card, for charts that sit outside the two-column grid. */
+.chart-card--wide {
+  margin-top: 16px;
+}
+
 /* Plot box: a definite width and height, which is what the chart's own
    ResponsiveContainer measures. */
 .chart-card__plot {
@@ -427,6 +432,14 @@ code {
   background: var(--danger-bg);
   border: 1px solid var(--danger-border);
   color: var(--danger-text);
+}
+
+/* Shown when the visible payload predates the last filter change. */
+.state--stale {
+  background: #fff8e6;
+  border: 1px solid #e8d9a8;
+  color: #6b5310;
+  font-size: 13px;
 }
 
 .state__title {

@@ -1,6 +1,7 @@
 import { OpportunityBandChart } from './OpportunityBandChart.jsx'
 import { TopJobFunctionsByOpportunityChart } from './TopJobFunctionsByOpportunityChart.jsx'
 import { ErrorBanner, LoadingState } from '../States.jsx'
+import { StaleBanner } from '../StaleBanner.jsx'
 
 /**
  * Opportunity Analysis tab body.
@@ -16,6 +17,7 @@ export function OpportunityAnalysisPanel({
   opportunity,
   loading,
   error,
+  stale = false,
   onRetry,
 }) {
   if (loading && !opportunity) {
@@ -38,6 +40,8 @@ export function OpportunityAnalysisPanel({
 
   return (
     <>
+      <StaleBanner show={stale} />
+
       {/* A failure that left previously loaded data in place. */}
       <ErrorBanner error={error} onRetry={onRetry} />
 

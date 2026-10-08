@@ -2,6 +2,7 @@ import { SalaryBandChart } from './SalaryBandChart.jsx'
 import { AverageSalaryByFunctionChart } from './AverageSalaryByFunctionChart.jsx'
 import { SalarySummaryTable } from './SalarySummaryTable.jsx'
 import { ErrorBanner, LoadingState } from '../States.jsx'
+import { StaleBanner } from '../StaleBanner.jsx'
 
 /**
  * Salary Analysis tab body.
@@ -13,7 +14,13 @@ import { ErrorBanner, LoadingState } from '../States.jsx'
  * Availability flags come straight from the payload, so a chart is
  * omitted exactly when the backend marked it unavailable.
  */
-export function SalaryAnalysisPanel({ salary, loading, error, onRetry }) {
+export function SalaryAnalysisPanel({
+  salary,
+  loading,
+  error,
+  stale = false,
+  onRetry,
+}) {
   if (loading && !salary) {
     return <LoadingState label="Loading Salary Analysis…" />
   }
@@ -34,6 +41,8 @@ export function SalaryAnalysisPanel({ salary, loading, error, onRetry }) {
 
   return (
     <>
+      <StaleBanner show={stale} />
+
       {/* A failure that left previously loaded data in place. */}
       <ErrorBanner error={error} onRetry={onRetry} />
 

@@ -2,14 +2,17 @@ import { useState } from 'react'
 import { useDashboardData } from './hooks/useDashboardData.js'
 import { useSalaryAnalysis } from './hooks/useSalaryAnalysis.js'
 import { useOpportunityAnalysis } from './hooks/useOpportunityAnalysis.js'
+import { useDemandAnalysis } from './hooks/useDemandAnalysis.js'
 import { FilterSidebar } from './components/FilterSidebar.jsx'
 import { BridgeKpis, KpiCards } from './components/KpiCards.jsx'
 import { DaxPanel } from './components/DaxPanel.jsx'
 import { OverviewCharts } from './components/charts/OverviewCharts.jsx'
 import { SalaryAnalysisPanel } from './components/salary/SalaryAnalysisPanel.jsx'
 import { OpportunityAnalysisPanel } from './components/opportunity/OpportunityAnalysisPanel.jsx'
+import { DemandAnalysisPanel } from './components/demand/DemandAnalysisPanel.jsx'
 import { TabPanel, Tabs } from './components/Tabs.jsx'
 import { ErrorBanner, LoadingState } from './components/States.jsx'
+import { StaleBanner } from './components/StaleBanner.jsx'
 import { fmtNumber } from './utils/format.js'
 import { API_BASE_URL } from './api/client.js'
 
@@ -17,6 +20,7 @@ const TABS = [
   { id: 'overview', label: '📊 Overview' },
   { id: 'salary', label: '💰 Salary Analysis' },
   { id: 'opportunity', label: '🎯 Opportunity Analysis' },
+  { id: 'demand', label: '📈 Demand & Seniority' },
 ]
 
 /**
@@ -24,19 +28,31 @@ const TABS = [
  *
  * This component and its children only:
  *   - hold the sidebar selections in component state,
- *   - call the Overview and Salary Analysis endpoints,
+ *   - call the endpoints of the ACTIVE tab,
  *   - render whatever JSON comes back.
  *
  * There is no filtering, aggregation or scoring here. The 10 filters, the
  * KPI values, the chart datasets and the salary summary measures are all
  * decided by FastAPI.
  *
- * The salary data is fetched by its own hook from the SAME selections
- * object, so both tabs always describe the same filtered rows, and a
- * salary failure cannot take the Overview page down with it.
+ * FETCH STRATEGY
+ * --------------
+ * `activeTab` is passed down as each tab's `enabled` flag, so only the
+ * visible page fetches. Changing a filter therefore costs one request per
+ * visible page instead of one per tab, which matters most for Demand &
+ * Seniority: its scatter can carry the backend's 25,000-row sample.
+ *
+ * Inactive tabs keep their last successful payload on screen, flagged
+ * stale, and reload as soon as they are activated. Refresh bumps the
+ * shared token, so it reloads the descriptors plus whichever tab is open.
  */
 export default function App() {
   const [activeTab, setActiveTab] = useState('overview')
+
+  const isOverview = activeTab === 'overview'
+  const isSalary = activeTab === 'salary'
+  const isOpportunity = activeTab === 'opportunity'
+  const isDemand = activeTab === 'demand'
 
   const {
     descriptors,
@@ -47,25 +63,50 @@ export default function App() {
     charts,
     overviewState,
     chartsState,
+    overviewStale,
+    chartsStale,
     isLoading,
+    // Exposed so the active tab's hook can refetch in step with Refresh.
+    refreshToken,
     setFilterValues,
     resetFilters,
     refresh,
-    refreshToken,
-  } = useDashboardData()
+    refetchOverview,
+  } = useDashboardData({ enabled: isOverview })
 
   const {
     salary,
     loading: salaryLoading,
     error: salaryError,
-  } = useSalaryAnalysis(selections, { ready: filtersReady, refreshToken })
+    stale: salaryStale,
+    refetch: refetchSalary,
+  } = useSalaryAnalysis(selections, {
+    ready: filtersReady,
+    enabled: isSalary,
+    refreshToken,
+  })
 
   const {
     opportunity,
     loading: opportunityLoading,
     error: opportunityError,
+    stale: opportunityStale,
+    refetch: refetchOpportunity,
   } = useOpportunityAnalysis(selections, {
     ready: filtersReady,
+    enabled: isOpportunity,
+    refreshToken,
+  })
+
+  const {
+    demand,
+    loading: demandLoading,
+    error: demandError,
+    stale: demandStale,
+    refetch: refetchDemand,
+  } = useDemandAnalysis(selections, {
+    ready: filtersReady,
+    enabled: isDemand,
     refreshToken,
   })
 
@@ -120,9 +161,11 @@ export default function App() {
               </p>
             )}
 
+            <StaleBanner show={overviewStale || chartsStale} />
+
             <ErrorBanner
               error={overviewState.error}
-              onRetry={refresh}
+              onRetry={refetchOverview}
               retryLabel="Retry KPIs"
             />
 
@@ -148,7 +191,7 @@ export default function App() {
 
             <ErrorBanner
               error={chartsState.error}
-              onRetry={refresh}
+              onRetry={refetchOverview}
               retryLabel="Retry charts"
             />
 
@@ -159,21 +202,33 @@ export default function App() {
             {charts && <OverviewCharts charts={charts.charts || {}} />}
           </TabPanel>
 
-          <TabPanel id="salary" active={activeTab === 'salary'}>
+          <TabPanel id="salary" active={isSalary}>
             <SalaryAnalysisPanel
               salary={salary}
               loading={salaryLoading}
               error={salaryError}
-              onRetry={refresh}
+              stale={salaryStale}
+              onRetry={refetchSalary}
             />
           </TabPanel>
 
-          <TabPanel id="opportunity" active={activeTab === 'opportunity'}>
+          <TabPanel id="opportunity" active={isOpportunity}>
             <OpportunityAnalysisPanel
               opportunity={opportunity}
               loading={opportunityLoading}
               error={opportunityError}
-              onRetry={refresh}
+              stale={opportunityStale}
+              onRetry={refetchOpportunity}
+            />
+          </TabPanel>
+
+          <TabPanel id="demand" active={isDemand}>
+            <DemandAnalysisPanel
+              demand={demand}
+              loading={demandLoading}
+              error={demandError}
+              stale={demandStale}
+              onRetry={refetchDemand}
             />
           </TabPanel>
         </main>

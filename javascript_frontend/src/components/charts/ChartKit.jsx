@@ -20,12 +20,16 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart as RechartsScatterChart,
   Tooltip,
   XAxis,
   YAxis,
+  ZAxis,
 } from 'recharts'
 import { fmtNumber } from '../../utils/format.js'
 
@@ -195,6 +199,88 @@ export function HorizontalBarChart({
         {barTooltip(tooltip)}
         <Bar dataKey={valueKey} fill="#4C78A8" />
       </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
+/**
+ * Bubble scatter, used by "Salary vs Applications per Vacancy".
+ *
+ * `series` is a list of { name, rows, color } so a categorical encoding
+ * (seniority) can be drawn as one series per level, the way the
+ * reference's colour encoding produces a legend. Nothing is computed
+ * here: x, y and size are the fields the backend returned.
+ *
+ * Both axes use an auto domain so neither is forced to include zero,
+ * mirroring the reference's scale: {zero: false} on x and y.
+ *
+ * Sizing note: the reference encodes bubble AREA with a linear size scale
+ * over [15, 600] px2. Recharts interpolates the ZAxis range linearly on
+ * RADIUS, so the range below is that area range converted to pixels
+ * (sqrt(15/pi) .. sqrt(600/pi)). The endpoints match; mid-range bubbles
+ * are slightly smaller than the reference's area-linear mapping.
+ */
+export function ScatterChart({
+  series = [],
+  xKey,
+  yKey,
+  sizeKey,
+  xLabel,
+  yLabel,
+  sizeLabel,
+  tooltip,
+  showLegend = false,
+}) {
+  const areaRange = [15, 600]
+  const radiusRange = [
+    Math.sqrt(areaRange[0] / Math.PI),
+    Math.sqrt(areaRange[1] / Math.PI),
+  ]
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <RechartsScatterChart margin={{ top: 8, right: 24, bottom: 42, left: 12 }}>
+        <CartesianGrid />
+        <XAxis
+          type="number"
+          dataKey={xKey}
+          name={xLabel}
+          domain={['auto', 'auto']}
+          tick={{ fontSize: 12 }}
+          tickFormatter={valueFormatter}
+          label={axisLabel(xLabel, 'insideBottom', 0, -8)}
+        />
+        <YAxis
+          type="number"
+          dataKey={yKey}
+          name={yLabel}
+          domain={['auto', 'auto']}
+          tick={{ fontSize: 12 }}
+          tickFormatter={valueFormatter}
+          width={70}
+          label={axisLabel(yLabel, 'insideLeft', -90, 0)}
+        />
+        {sizeKey ? (
+          <ZAxis
+            type="number"
+            dataKey={sizeKey}
+            name={sizeLabel}
+            range={radiusRange}
+          />
+        ) : null}
+        {barTooltip(tooltip)}
+        {showLegend ? <Legend wrapperStyle={{ fontSize: 12 }} /> : null}
+        {series.map((entry) => (
+          <Scatter
+            key={entry.name}
+            name={entry.name}
+            data={entry.rows}
+            fill={entry.color}
+            fillOpacity={0.45}
+            isAnimationActive={false}
+          />
+        ))}
+      </RechartsScatterChart>
     </ResponsiveContainer>
   )
 }
