@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useDashboardData } from './hooks/useDashboardData.js'
 import { useSalaryAnalysis } from './hooks/useSalaryAnalysis.js'
+import { useOpportunityAnalysis } from './hooks/useOpportunityAnalysis.js'
 import { FilterSidebar } from './components/FilterSidebar.jsx'
 import { BridgeKpis, KpiCards } from './components/KpiCards.jsx'
 import { DaxPanel } from './components/DaxPanel.jsx'
 import { OverviewCharts } from './components/charts/OverviewCharts.jsx'
 import { SalaryAnalysisPanel } from './components/salary/SalaryAnalysisPanel.jsx'
+import { OpportunityAnalysisPanel } from './components/opportunity/OpportunityAnalysisPanel.jsx'
 import { TabPanel, Tabs } from './components/Tabs.jsx'
 import { ErrorBanner, LoadingState } from './components/States.jsx'
 import { fmtNumber } from './utils/format.js'
@@ -14,6 +16,7 @@ import { API_BASE_URL } from './api/client.js'
 const TABS = [
   { id: 'overview', label: '📊 Overview' },
   { id: 'salary', label: '💰 Salary Analysis' },
+  { id: 'opportunity', label: '🎯 Opportunity Analysis' },
 ]
 
 /**
@@ -56,6 +59,15 @@ export default function App() {
     loading: salaryLoading,
     error: salaryError,
   } = useSalaryAnalysis(selections, { ready: filtersReady, refreshToken })
+
+  const {
+    opportunity,
+    loading: opportunityLoading,
+    error: opportunityError,
+  } = useOpportunityAnalysis(selections, {
+    ready: filtersReady,
+    refreshToken,
+  })
 
   const meta = overview?.meta || {}
   const primaryKpis = overview?.primary_kpis || {}
@@ -152,6 +164,15 @@ export default function App() {
               salary={salary}
               loading={salaryLoading}
               error={salaryError}
+              onRetry={refresh}
+            />
+          </TabPanel>
+
+          <TabPanel id="opportunity" active={activeTab === 'opportunity'}>
+            <OpportunityAnalysisPanel
+              opportunity={opportunity}
+              loading={opportunityLoading}
+              error={opportunityError}
               onRetry={refresh}
             />
           </TabPanel>

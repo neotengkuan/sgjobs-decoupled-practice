@@ -48,11 +48,37 @@ function axisLabel(value, position, angle, offset) {
 }
 
 /**
- * A chart block: title, and a fixed-height plot area for the child chart.
+ * Build the tooltip element for a bar chart.
+ *
+ * `tooltip` is optional and defaults to the existing behaviour, so the
+ * Overview and Salary charts are unaffected:
+ *   - tooltip.formatValue -> value formatter (default: thousands separated)
+ *   - tooltip.content     -> custom renderer, for a reference tooltip that
+ *                            shows more than a label and one value
+ */
+function barTooltip(tooltip) {
+  if (tooltip?.content) {
+    return <Tooltip content={tooltip.content} />
+  }
+
+  if (tooltip?.formatValue) {
+    return <Tooltip formatter={tooltip.formatValue} />
+  }
+
+  return <Tooltip formatter={valueFormatter} />
+}
+
+/**
+ * A chart block: title, an optional note, and a fixed-height plot area
+ * for the child chart.
  *
  * Renders nothing but the title when the backend marked the dataset
  * unavailable, and a placeholder when it returned no rows - matching the
  * reference, which shows a heading and no chart in those cases.
+ *
+ * `caption` is rendered between the title and the plot area, so a note
+ * about the ranking sits above the chart the way it does in the
+ * reference rather than inside the plot box.
  *
  * Sizing note: this element gives the box a definite width and height; the
  * chart inside fills it via its own ResponsiveContainer.
@@ -62,6 +88,7 @@ export function ChartCard({
   available = true,
   isEmpty = false,
   height = 340,
+  caption,
   children,
 }) {
   return (
@@ -69,13 +96,19 @@ export function ChartCard({
       <h3 className="chart-card__title">{title}</h3>
 
       {!available ? null : isEmpty ? (
-        <div className="chart-card__empty" style={{ height }}>
-          No data for the current filter selection.
-        </div>
+        <>
+          {caption}
+          <div className="chart-card__empty" style={{ height }}>
+            No data for the current filter selection.
+          </div>
+        </>
       ) : (
-        <div className="chart-card__plot" style={{ height }}>
-          {children}
-        </div>
+        <>
+          {caption}
+          <div className="chart-card__plot" style={{ height }}>
+            {children}
+          </div>
+        </>
       )}
     </section>
   )
@@ -94,6 +127,7 @@ export function VerticalBarChart({
   valueKey = 'Jobs',
   xLabel,
   yLabel,
+  tooltip,
 }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -115,7 +149,7 @@ export function VerticalBarChart({
           tick={{ fontSize: 12 }}
           label={axisLabel(yLabel, 'insideLeft', -90, 0)}
         />
-        <Tooltip formatter={valueFormatter} />
+        {barTooltip(tooltip)}
         <Bar dataKey={valueKey} fill="#4C78A8" />
       </BarChart>
     </ResponsiveContainer>
@@ -135,6 +169,7 @@ export function HorizontalBarChart({
   labelWidth = 260,
   xLabel,
   yLabel,
+  tooltip,
 }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -157,7 +192,7 @@ export function HorizontalBarChart({
           interval={0}
           label={axisLabel(yLabel, 'insideLeft', -90, 0)}
         />
-        <Tooltip formatter={valueFormatter} />
+        {barTooltip(tooltip)}
         <Bar dataKey={valueKey} fill="#4C78A8" />
       </BarChart>
     </ResponsiveContainer>

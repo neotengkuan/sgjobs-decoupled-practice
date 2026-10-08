@@ -368,6 +368,14 @@ code {
   width: 100%;
 }
 
+/* Note rendered between a chart title and its plot area (for example the
+   Opportunity ranking rule). */
+.chart-card__caption {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .chart-card__empty {
   display: flex;
   align-items: center;
@@ -376,6 +384,26 @@ code {
   font-size: 13px;
   text-align: center;
   padding: 0 20px;
+}
+
+/* ---------------- Chart tooltip ---------------- */
+
+.tooltip-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(28, 36, 48, 0.12);
+}
+
+.tooltip-card p {
+  margin: 2px 0;
+  white-space: nowrap;
+}
+
+.tooltip-card__title {
+  font-weight: 600;
 }
 
 /* ---------------- States ---------------- */
