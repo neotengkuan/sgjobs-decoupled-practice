@@ -1,27 +1,44 @@
+import { useState } from 'react'
 import { useDashboardData } from './hooks/useDashboardData.js'
+import { useSalaryAnalysis } from './hooks/useSalaryAnalysis.js'
 import { FilterSidebar } from './components/FilterSidebar.jsx'
 import { BridgeKpis, KpiCards } from './components/KpiCards.jsx'
 import { DaxPanel } from './components/DaxPanel.jsx'
 import { OverviewCharts } from './components/charts/OverviewCharts.jsx'
+import { SalaryAnalysisPanel } from './components/salary/SalaryAnalysisPanel.jsx'
+import { TabPanel, Tabs } from './components/Tabs.jsx'
 import { ErrorBanner, LoadingState } from './components/States.jsx'
 import { fmtNumber } from './utils/format.js'
 import { API_BASE_URL } from './api/client.js'
 
+const TABS = [
+  { id: 'overview', label: '📊 Overview' },
+  { id: 'salary', label: '💰 Salary Analysis' },
+]
+
 /**
- * SGJobs Overview page.
+ * SGJobs dashboard shell.
  *
  * This component and its children only:
  *   - hold the sidebar selections in component state,
- *   - call the three Overview endpoints,
+ *   - call the Overview and Salary Analysis endpoints,
  *   - render whatever JSON comes back.
  *
  * There is no filtering, aggregation or scoring here. The 10 filters, the
- * KPI values and the chart datasets are all decided by FastAPI.
+ * KPI values, the chart datasets and the salary summary measures are all
+ * decided by FastAPI.
+ *
+ * The salary data is fetched by its own hook from the SAME selections
+ * object, so both tabs always describe the same filtered rows, and a
+ * salary failure cannot take the Overview page down with it.
  */
 export default function App() {
+  const [activeTab, setActiveTab] = useState('overview')
+
   const {
     descriptors,
     selections,
+    filtersReady,
     filtersState,
     overview,
     charts,
@@ -31,7 +48,14 @@ export default function App() {
     setFilterValues,
     resetFilters,
     refresh,
+    refreshToken,
   } = useDashboardData()
+
+  const {
+    salary,
+    loading: salaryLoading,
+    error: salaryError,
+  } = useSalaryAnalysis(selections, { ready: filtersReady, refreshToken })
 
   const meta = overview?.meta || {}
   const primaryKpis = overview?.primary_kpis || {}
@@ -63,61 +87,74 @@ export default function App() {
         />
 
         <main className="content">
-          <ErrorBanner
-            error={filtersState.error}
-            onRetry={refresh}
-            retryLabel="Reload filters"
-          />
+          <Tabs tabs={TABS} activeId={activeTab} onChange={setActiveTab} />
 
-          {filtersState.loading && !descriptors.length && (
-            <LoadingState label="Loading filters…" />
-          )}
+          <TabPanel id="overview" active={activeTab === 'overview'}>
+            <ErrorBanner
+              error={filtersState.error}
+              onRetry={refresh}
+              retryLabel="Reload filters"
+            />
 
-          {overview && (
-            <p className="content__meta">
-              Optimized source: {meta.data_file} ({meta.source_type}) | Rows
-              loaded: {fmtNumber(meta.rows_total)} | Columns loaded:{' '}
-              {fmtNumber(meta.columns_loaded?.length)}
-            </p>
-          )}
+            {filtersState.loading && !descriptors.length && (
+              <LoadingState label="Loading filters…" />
+            )}
 
-          <ErrorBanner
-            error={overviewState.error}
-            onRetry={refresh}
-            retryLabel="Retry KPIs"
-          />
-
-          {overviewState.loading && !overview && (
-            <LoadingState label="Loading Overview KPIs…" />
-          )}
-
-          {overview && (
-            <>
-              <KpiCards primaryKpis={primaryKpis} />
-
+            {overview && (
               <p className="content__meta">
-                Showing {fmtNumber(meta.rows_filtered)} of{' '}
-                {fmtNumber(meta.rows_total)} job records
+                Optimized source: {meta.data_file} ({meta.source_type}) | Rows
+                loaded: {fmtNumber(meta.rows_total)} | Columns loaded:{' '}
+                {fmtNumber(meta.columns_loaded?.length)}
               </p>
-              <p className="content__meta">{meta.filter_context}</p>
+            )}
 
-              <BridgeKpis bridgeKpis={bridgeKpis} />
+            <ErrorBanner
+              error={overviewState.error}
+              onRetry={refresh}
+              retryLabel="Retry KPIs"
+            />
 
-              <DaxPanel daxMeasures={daxMeasures} />
-            </>
-          )}
+            {overviewState.loading && !overview && (
+              <LoadingState label="Loading Overview KPIs…" />
+            )}
 
-          <ErrorBanner
-            error={chartsState.error}
-            onRetry={refresh}
-            retryLabel="Retry charts"
-          />
+            {overview && (
+              <>
+                <KpiCards primaryKpis={primaryKpis} />
 
-          {chartsState.loading && !charts && (
-            <LoadingState label="Loading Overview charts…" />
-          )}
+                <p className="content__meta">
+                  Showing {fmtNumber(meta.rows_filtered)} of{' '}
+                  {fmtNumber(meta.rows_total)} job records
+                </p>
+                <p className="content__meta">{meta.filter_context}</p>
 
-          {charts && <OverviewCharts charts={charts.charts || {}} />}
+                <BridgeKpis bridgeKpis={bridgeKpis} />
+
+                <DaxPanel daxMeasures={daxMeasures} />
+              </>
+            )}
+
+            <ErrorBanner
+              error={chartsState.error}
+              onRetry={refresh}
+              retryLabel="Retry charts"
+            />
+
+            {chartsState.loading && !charts && (
+              <LoadingState label="Loading Overview charts…" />
+            )}
+
+            {charts && <OverviewCharts charts={charts.charts || {}} />}
+          </TabPanel>
+
+          <TabPanel id="salary" active={activeTab === 'salary'}>
+            <SalaryAnalysisPanel
+              salary={salary}
+              loading={salaryLoading}
+              error={salaryError}
+              onRetry={refresh}
+            />
+          </TabPanel>
         </main>
       </div>
     </div>

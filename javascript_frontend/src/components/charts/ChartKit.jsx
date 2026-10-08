@@ -1,9 +1,20 @@
 /**
  * Shared Recharts plumbing.
  *
- * The data always arrives pre-aggregated from /api/overview/charts, so
- * these components never group, sum or count anything - they only render
- * the rows the backend produced, in the order it produced them.
+ * The data always arrives pre-aggregated from the API, so these components
+ * never group, sum or count anything - they only render the rows the
+ * backend produced, in the order it produced them.
+ *
+ * RESPONSIVE SIZING
+ * -----------------
+ * Each chart component below puts ResponsiveContainer DIRECTLY around its
+ * own Recharts chart. That is required: ResponsiveContainer measures its
+ * parent and clones its immediate child with the computed width/height, so
+ * only a Recharts chart component can receive them. A wrapper component in
+ * between swallows the props and the chart renders at 0x0.
+ *
+ * ChartCard therefore does NOT contain a ResponsiveContainer. It only
+ * supplies the fixed-height plot area, and each chart fills that box.
  */
 import {
   Bar,
@@ -24,8 +35,27 @@ function valueFormatter(value) {
 }
 
 /**
- * A chart block: optional subtitle, a fixed-height plot area, or nothing
- * at all when the backend marked the dataset unavailable.
+ * Build a Recharts axis-label prop, or undefined when there is no title.
+ * The reference leaves the category axis of the horizontal charts
+ * untitled, so that axis keeps getting no label.
+ */
+function axisLabel(value, position, angle, offset) {
+  if (!value) {
+    return undefined
+  }
+
+  return { value, position, angle, offset, fontSize: 12 }
+}
+
+/**
+ * A chart block: title, and a fixed-height plot area for the child chart.
+ *
+ * Renders nothing but the title when the backend marked the dataset
+ * unavailable, and a placeholder when it returned no rows - matching the
+ * reference, which shows a heading and no chart in those cases.
+ *
+ * Sizing note: this element gives the box a definite width and height; the
+ * chart inside fills it via its own ResponsiveContainer.
  */
 export function ChartCard({
   title,
@@ -43,10 +73,8 @@ export function ChartCard({
           No data for the current filter selection.
         </div>
       ) : (
-        <div style={{ width: '100%', height }}>
-          <ResponsiveContainer width="100%" height="100%">
-            {children}
-          </ResponsiveContainer>
+        <div className="chart-card__plot" style={{ height }}>
+          {children}
         </div>
       )}
     </section>
@@ -54,27 +82,43 @@ export function ChartCard({
 }
 
 /**
- * Vertical bar chart, used by "Jobs by Employment Type".
+ * Vertical bar chart, used by "Jobs by Employment Type" and
+ * "Jobs by Salary Band".
  *
  * Rows arrive in value_counts order, which is descending by Jobs, so the
  * left-to-right order matches the reference chart's descending sort.
  */
-export function VerticalBarChart({ data, categoryKey, valueKey = 'Jobs' }) {
+export function VerticalBarChart({
+  data,
+  categoryKey,
+  valueKey = 'Jobs',
+  xLabel,
+  yLabel,
+}) {
   return (
-    <BarChart data={data} margin={{ top: 8, right: 16, bottom: 72, left: 8 }}>
-      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-      <XAxis
-        dataKey={categoryKey}
-        interval={0}
-        angle={-30}
-        textAnchor="end"
-        height={70}
-        tick={{ fontSize: 12 }}
-      />
-      <YAxis tick={{ fontSize: 12 }} />
-      <Tooltip formatter={valueFormatter} />
-      <Bar dataKey={valueKey} fill="#4C78A8" />
-    </BarChart>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        margin={{ top: 8, right: 16, bottom: 78, left: 8 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis
+          dataKey={categoryKey}
+          interval={0}
+          angle={-30}
+          textAnchor="end"
+          height={70}
+          tick={{ fontSize: 12 }}
+          label={axisLabel(xLabel, 'insideBottom', 0, 58)}
+        />
+        <YAxis
+          tick={{ fontSize: 12 }}
+          label={axisLabel(yLabel, 'insideLeft', -90, 0)}
+        />
+        <Tooltip formatter={valueFormatter} />
+        <Bar dataKey={valueKey} fill="#4C78A8" />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }
 
@@ -88,27 +132,35 @@ export function HorizontalBarChart({
   data,
   categoryKey,
   valueKey = 'Jobs',
-  height = 400,
   labelWidth = 260,
+  xLabel,
+  yLabel,
 }) {
   return (
-    <BarChart
-      data={data}
-      layout="vertical"
-      margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
-    >
-      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-      <XAxis type="number" tick={{ fontSize: 12 }} />
-      <YAxis
-        type="category"
-        dataKey={categoryKey}
-        width={labelWidth}
-        tick={{ fontSize: 12 }}
-        interval={0}
-      />
-      <Tooltip formatter={valueFormatter} />
-      <Bar dataKey={valueKey} fill="#4C78A8" />
-    </BarChart>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ top: 8, right: 24, bottom: 22, left: 8 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+        <XAxis
+          type="number"
+          tick={{ fontSize: 12 }}
+          label={axisLabel(xLabel, 'insideBottom', 0, -2)}
+        />
+        <YAxis
+          type="category"
+          dataKey={categoryKey}
+          width={labelWidth}
+          tick={{ fontSize: 12 }}
+          interval={0}
+          label={axisLabel(yLabel, 'insideLeft', -90, 0)}
+        />
+        <Tooltip formatter={valueFormatter} />
+        <Bar dataKey={valueKey} fill="#4C78A8" />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }
 
@@ -120,26 +172,31 @@ export function HorizontalBarChart({
  */
 export function MonthlyLineChart({ data }) {
   return (
-    <LineChart data={data} margin={{ top: 8, right: 16, bottom: 72, left: 8 }}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis
-        dataKey="month_year"
-        angle={-45}
-        textAnchor="end"
-        height={70}
-        interval="preserveStartEnd"
-        tick={{ fontSize: 12 }}
-      />
-      <YAxis tick={{ fontSize: 12 }} />
-      <Tooltip formatter={valueFormatter} />
-      <Line
-        type="monotone"
-        dataKey="Jobs"
-        stroke="#4C78A8"
-        strokeWidth={2}
-        dot={{ r: 3 }}
-        activeDot={{ r: 5 }}
-      />
-    </LineChart>
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart
+        data={data}
+        margin={{ top: 8, right: 16, bottom: 72, left: 8 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis
+          dataKey="month_year"
+          angle={-45}
+          textAnchor="end"
+          height={70}
+          interval="preserveStartEnd"
+          tick={{ fontSize: 12 }}
+        />
+        <YAxis tick={{ fontSize: 12 }} />
+        <Tooltip formatter={valueFormatter} />
+        <Line
+          type="monotone"
+          dataKey="Jobs"
+          stroke="#4C78A8"
+          strokeWidth={2}
+          dot={{ r: 3 }}
+          activeDot={{ r: 5 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
   )
 }

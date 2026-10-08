@@ -264,6 +264,83 @@ code {
   font-size: 14px;
 }
 
+/* ---------------- Tabs ---------------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.tab {
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text);
+  background: #eef3f8;
+}
+
+.tab--active {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 600;
+  margin-bottom: -1px;
+}
+
+.tab-panel {
+  min-width: 0;
+}
+
+.section-title {
+  margin: 22px 0 8px;
+  font-size: 17px;
+}
+
+/* ---------------- Measure table ---------------- */
+
+.measure-table {
+  width: 100%;
+  max-width: 520px;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.measure-table th,
+.measure-table td {
+  padding: 8px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.measure-table th {
+  background: #f1f4f8;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.measure-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.measure-table__value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------------- Charts ---------------- */
 
 .chart-grid {
@@ -283,6 +360,12 @@ code {
 .chart-card__title {
   margin: 0 0 6px;
   font-size: 15px;
+}
+
+/* Plot box: a definite width and height, which is what the chart's own
+   ResponsiveContainer measures. */
+.chart-card__plot {
+  width: 100%;
 }
 
 .chart-card__empty {

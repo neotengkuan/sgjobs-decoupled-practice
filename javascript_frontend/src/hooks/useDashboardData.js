@@ -152,6 +152,8 @@ export function useDashboardData() {
     chartsState,
     isLoading:
       filtersState.loading || overviewState.loading || chartsState.loading,
+    // Exposed so other tab hooks can refetch in step with Refresh.
+    refreshToken,
     setFilterValues,
     resetFilters,
     refresh,
