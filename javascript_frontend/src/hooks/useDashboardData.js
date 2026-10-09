@@ -14,12 +14,16 @@ import { pruneSelections } from '../api/query.js'
  * active, so a filter change costs one request per visible page instead of
  * one per tab.
  *
- * @param {{enabled?: boolean}} options
- *   enabled - the Overview tab is currently active. Overview requests are
- *             skipped while another tab is on screen; the payload stays
- *             visible and is flagged stale.
+ * @param {{enabled?: boolean, needsOverview?: boolean}} options
+ *   enabled       - the Overview tab is active, so its requests run.
+ *   needsOverview - another tab needs the Overview KPI payload as well. The
+ *                   Data Quality tab shows the Data Quality Issue Rate,
+ *                   which the reference computes once and reuses rather
+ *                   than recomputing, so it reads that value from here. Only
+ *                   the KPI request is widened to cover that tab; the chart
+ *                   datasets stay tied to the Overview tab itself.
  */
-export function useDashboardData({ enabled = true } = {}) {
+export function useDashboardData({ enabled = true, needsOverview = false } = {}) {
   const [refreshToken, setRefreshToken] = useState(0)
   const [overviewToken, setOverviewToken] = useState(0)
 
@@ -81,18 +85,18 @@ export function useDashboardData({ enabled = true } = {}) {
     return () => controller.abort()
   }, [refreshToken])
 
-  // ---- Overview KPIs + Overview chart datasets ----------------------------
-  // Gated on `enabled`: both requests belong to the Overview page only.
+  // ---- Overview KPIs ------------------------------------------------------
+  // Runs while Overview is active, and also for any tab that reuses the
+  // Overview KPI payload (see needsOverview).
 
   useEffect(() => {
-    if (!filtersReady || !enabled) {
+    if (!filtersReady || !(enabled || needsOverview)) {
       return undefined
     }
 
     const controller = new AbortController()
 
     setOverviewState({ loading: true, error: null })
-    setChartsState({ loading: true, error: null })
 
     fetchOverview(selections, { signal: controller.signal })
       .then((payload) => {
@@ -107,6 +111,23 @@ export function useDashboardData({ enabled = true } = {}) {
 
         setOverviewState({ loading: false, error })
       })
+
+    return () => controller.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtersReady, enabled, needsOverview, selectionKey, refreshToken, overviewToken])
+
+  // ---- Overview chart datasets --------------------------------------------
+  // These belong to the Overview page only, so they stay tied to `enabled`
+  // even when another tab needs the KPI payload.
+
+  useEffect(() => {
+    if (!filtersReady || !enabled) {
+      return undefined
+    }
+
+    const controller = new AbortController()
+
+    setChartsState({ loading: true, error: null })
 
     fetchOverviewCharts(selections, { signal: controller.signal })
       .then((payload) => {
@@ -123,8 +144,6 @@ export function useDashboardData({ enabled = true } = {}) {
       })
 
     return () => controller.abort()
-    // selectionKey serialises the selection, so a new object with equal
-    // contents does not trigger a refetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersReady, enabled, selectionKey, refreshToken, overviewToken])
 
@@ -177,7 +196,8 @@ export function useDashboardData({ enabled = true } = {}) {
     chartsStale: charts !== null && chartsKey !== selectionKey,
     isLoading:
       filtersState.loading ||
-      (enabled && (overviewState.loading || chartsState.loading)),
+      ((enabled || needsOverview) && overviewState.loading) ||
+      (enabled && chartsState.loading),
     // Exposed so the active tab's hook can refetch in step with Refresh.
     refreshToken,
     setFilterValues,

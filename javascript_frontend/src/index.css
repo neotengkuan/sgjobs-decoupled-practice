@@ -391,6 +391,76 @@ code {
   padding: 0 20px;
 }
 
+/* ---------------- Data table ---------------- */
+
+.data-table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 7px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.data-table th {
+  background: #f1f4f8;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table tbody tr:hover td {
+  background: #f7f9fb;
+}
+
+.data-table__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- Labelled select ---------------- */
+
+.field {
+  display: block;
+  margin: 4px 0 10px;
+  max-width: 320px;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.field__control {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--text);
+}
+
 /* ---------------- Chart tooltip ---------------- */
 
 .tooltip-card {

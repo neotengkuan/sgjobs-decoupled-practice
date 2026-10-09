@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useDashboardData } from './hooks/useDashboardData.js'
 import { useSalaryAnalysis } from './hooks/useSalaryAnalysis.js'
 import { useOpportunityAnalysis } from './hooks/useOpportunityAnalysis.js'
 import { useDemandAnalysis } from './hooks/useDemandAnalysis.js'
 import { useSkillsCategoriesAnalysis } from './hooks/useSkillsCategoriesAnalysis.js'
+import { useDataQualityAnalysis } from './hooks/useDataQualityAnalysis.js'
 import { FilterSidebar } from './components/FilterSidebar.jsx'
 import { BridgeKpis, KpiCards } from './components/KpiCards.jsx'
 import { DaxPanel } from './components/DaxPanel.jsx'
@@ -12,6 +13,7 @@ import { SalaryAnalysisPanel } from './components/salary/SalaryAnalysisPanel.jsx
 import { OpportunityAnalysisPanel } from './components/opportunity/OpportunityAnalysisPanel.jsx'
 import { DemandAnalysisPanel } from './components/demand/DemandAnalysisPanel.jsx'
 import { BridgeAnalysisPanel } from './components/bridge/BridgeAnalysisPanel.jsx'
+import { DataQualityPanel } from './components/quality/DataQualityPanel.jsx'
 import { TabPanel, Tabs } from './components/Tabs.jsx'
 import { ErrorBanner, LoadingState } from './components/States.jsx'
 import { StaleBanner } from './components/StaleBanner.jsx'
@@ -24,6 +26,7 @@ const TABS = [
   { id: 'opportunity', label: '🎯 Opportunity Analysis' },
   { id: 'demand', label: '📈 Demand & Seniority' },
   { id: 'bridge', label: '🧩 Skills & Categories' },
+  { id: 'quality', label: '🧪 Data Quality & Outliers' },
 ]
 
 /**
@@ -57,6 +60,18 @@ export default function App() {
   const isOpportunity = activeTab === 'opportunity'
   const isDemand = activeTab === 'demand'
   const isBridge = activeTab === 'bridge'
+  const isQuality = activeTab === 'quality'
+
+  // Review population for the Data Quality tab. Left undefined until the
+  // first response arrives, so the backend applies its own default - the
+  // first entry of meta.review_populations - exactly as the reference
+  // selectbox does.
+  const [reviewPopulation, setReviewPopulation] = useState()
+
+  // Stable, so the panel's self-heal effect does not re-run every render.
+  const handleReviewPopulation = useCallback((value) => {
+    setReviewPopulation(value)
+  }, [])
 
   const {
     descriptors,
@@ -76,7 +91,12 @@ export default function App() {
     resetFilters,
     refresh,
     refetchOverview,
-  } = useDashboardData({ enabled: isOverview })
+  // The Data Quality tab reuses the Overview issue rate, so the KPI payload
+  // is also requested while that tab is active.
+  } = useDashboardData({
+    enabled: isOverview,
+    needsOverview: isQuality,
+  })
 
   const {
     salary,
@@ -124,6 +144,19 @@ export default function App() {
     ready: filtersReady,
     enabled: isBridge,
     refreshToken,
+  })
+
+  const {
+    quality,
+    loading: qualityLoading,
+    error: qualityError,
+    stale: qualityStale,
+    refetch: refetchQuality,
+  } = useDataQualityAnalysis(selections, {
+    ready: filtersReady,
+    enabled: isQuality,
+    refreshToken,
+    reviewPopulation,
   })
 
   const meta = overview?.meta || {}
@@ -255,6 +288,19 @@ export default function App() {
               error={bridgeError}
               stale={bridgeStale}
               onRetry={refetchBridge}
+            />
+          </TabPanel>
+
+          <TabPanel id="quality" active={isQuality}>
+            <DataQualityPanel
+              quality={quality}
+              // Reused from the Overview payload, never recomputed here.
+              issueRate={daxMeasures.data_quality_issue_rate}
+              loading={qualityLoading}
+              error={qualityError}
+              stale={qualityStale}
+              onRetry={refetchQuality}
+              onReviewPopulationChange={handleReviewPopulation}
             />
           </TabPanel>
         </main>

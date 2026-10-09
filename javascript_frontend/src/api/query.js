@@ -44,10 +44,21 @@ export function buildFilterParams(filters = {}) {
  *
  * @param {string} path
  * @param {Record<string, Array<string|number>>} filters
+ * @param {Array<[string, string|number]>} extraPairs
  * @returns {string}
  */
-export function withFilterQuery(path, filters = {}) {
-  const query = buildFilterParams(filters).toString()
+export function withFilterQuery(path, filters = {}, extraPairs = []) {
+  const params = buildFilterParams(filters)
+
+  for (const [key, value] of extraPairs) {
+    if (value === null || value === undefined || value === '') {
+      continue
+    }
+
+    params.append(key, String(value))
+  }
+
+  const query = params.toString()
 
   return query ? `${path}?${query}` : path
 }

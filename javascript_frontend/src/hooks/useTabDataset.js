@@ -20,16 +20,23 @@ import { useEffect, useMemo, useState } from 'react'
  * The selections are owned by useDashboardData and passed in, so every
  * tab always describes the same filtered rows.
  *
+ * `extraKey` covers request state that is not a sidebar filter, such as
+ * the Data Quality review population. It joins the request key so a change
+ * to it refetches this tab, but it is deliberately kept OUT of `stale`:
+ * stale means "the filters moved on", not "some other control changed".
+ *
  * @param {(filters: object, opts: object) => Promise<object>} fetcher
  * @param {Record<string, Array<string|number>>} selections
  * @param {{
  *   ready?: boolean,
  *   enabled?: boolean,
  *   refreshToken?: number,
+ *   extraKey?: string,
  * }} options
  *   ready         - descriptors have loaded, so selections are meaningful
  *   enabled       - the tab is currently active; no fetch happens otherwise
  *   refreshToken  - bumped by Refresh, to refetch this tab
+ *   extraKey      - extra request state, folded into the request key
  * @returns {{
  *   data: object|null,
  *   loading: boolean,
@@ -41,7 +48,7 @@ import { useEffect, useMemo, useState } from 'react'
 export function useTabDataset(
   fetcher,
   selections,
-  { ready, enabled = true, refreshToken } = {},
+  { ready, enabled = true, refreshToken, extraKey = '' } = {},
 ) {
   const [data, setData] = useState(null)
   const [loadedKey, setLoadedKey] = useState(null)
@@ -51,6 +58,11 @@ export function useTabDataset(
   const selectionKey = useMemo(
     () => JSON.stringify(selections),
     [selections],
+  )
+
+  const requestKey = useMemo(
+    () => (extraKey ? `${selectionKey}|${extraKey}` : selectionKey),
+    [selectionKey, extraKey],
   )
 
   useEffect(() => {
@@ -65,9 +77,11 @@ export function useTabDataset(
 
     setState({ loading: true, error: null })
 
-    fetcher(selections, { signal: controller.signal })
+    fetcher(selections, { signal: controller.signal, extraKey })
       .then((payload) => {
         setData(payload)
+        // Tracks the FILTER selection only, so changing extraKey alone
+        // never makes the payload look stale.
         setLoadedKey(selectionKey)
         setState({ loading: false, error: null })
       })
@@ -80,10 +94,9 @@ export function useTabDataset(
       })
 
     return () => controller.abort()
-    // selectionKey serialises the selection, so a new object with equal
-    // contents does not trigger a refetch.
+    // requestKey covers selectionKey and extraKey together.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetcher, ready, enabled, selectionKey, refreshToken, localToken])
+  }, [fetcher, ready, enabled, requestKey, refreshToken, localToken])
 
   // The visible payload no longer matches the current selection.
   const stale = data !== null && loadedKey !== null && loadedKey !== selectionKey
