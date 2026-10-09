@@ -17,11 +17,12 @@ import { pruneSelections } from '../api/query.js'
  * @param {{enabled?: boolean, needsOverview?: boolean}} options
  *   enabled       - the Overview tab is active, so its requests run.
  *   needsOverview - another tab needs the Overview KPI payload as well. The
- *                   Data Quality tab shows the Data Quality Issue Rate,
- *                   which the reference computes once and reuses rather
- *                   than recomputing, so it reads that value from here. Only
- *                   the KPI request is widened to cover that tab; the chart
- *                   datasets stay tied to the Overview tab itself.
+ *                   Data Quality tab shows the Data Quality Issue Rate and
+ *                   the Repost tab shows the Repost Rate; the reference
+ *                   computes both once and reuses them rather than
+ *                   recomputing, so those tabs read the values from here.
+ *                   Only the KPI request is widened to cover them; the
+ *                   chart datasets stay tied to the Overview tab itself.
  */
 export function useDashboardData({ enabled = true, needsOverview = false } = {}) {
   const [refreshToken, setRefreshToken] = useState(0)

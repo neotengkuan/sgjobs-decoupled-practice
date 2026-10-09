@@ -5,6 +5,8 @@ import { useOpportunityAnalysis } from './hooks/useOpportunityAnalysis.js'
 import { useDemandAnalysis } from './hooks/useDemandAnalysis.js'
 import { useSkillsCategoriesAnalysis } from './hooks/useSkillsCategoriesAnalysis.js'
 import { useDataQualityAnalysis } from './hooks/useDataQualityAnalysis.js'
+import { useRepostAnalysis } from './hooks/useRepostAnalysis.js'
+import { useDrillthrough } from './hooks/useDrillthrough.js'
 import { FilterSidebar } from './components/FilterSidebar.jsx'
 import { BridgeKpis, KpiCards } from './components/KpiCards.jsx'
 import { DaxPanel } from './components/DaxPanel.jsx'
@@ -14,6 +16,8 @@ import { OpportunityAnalysisPanel } from './components/opportunity/OpportunityAn
 import { DemandAnalysisPanel } from './components/demand/DemandAnalysisPanel.jsx'
 import { BridgeAnalysisPanel } from './components/bridge/BridgeAnalysisPanel.jsx'
 import { DataQualityPanel } from './components/quality/DataQualityPanel.jsx'
+import { RepostAnalysisPanel } from './components/repost/RepostAnalysisPanel.jsx'
+import { DrillthroughPanel } from './components/drillthrough/DrillthroughPanel.jsx'
 import { TabPanel, Tabs } from './components/Tabs.jsx'
 import { ErrorBanner, LoadingState } from './components/States.jsx'
 import { StaleBanner } from './components/StaleBanner.jsx'
@@ -27,6 +31,8 @@ const TABS = [
   { id: 'demand', label: '📈 Demand & Seniority' },
   { id: 'bridge', label: '🧩 Skills & Categories' },
   { id: 'quality', label: '🧪 Data Quality & Outliers' },
+  { id: 'repost', label: '🔁 Repost Analysis' },
+  { id: 'drill', label: '📋 Detail Drillthrough' },
 ]
 
 /**
@@ -61,6 +67,8 @@ export default function App() {
   const isDemand = activeTab === 'demand'
   const isBridge = activeTab === 'bridge'
   const isQuality = activeTab === 'quality'
+  const isRepost = activeTab === 'repost'
+  const isDrill = activeTab === 'drill'
 
   // Review population for the Data Quality tab. Left undefined until the
   // first response arrives, so the backend applies its own default - the
@@ -91,11 +99,12 @@ export default function App() {
     resetFilters,
     refresh,
     refetchOverview,
-  // The Data Quality tab reuses the Overview issue rate, so the KPI payload
-  // is also requested while that tab is active.
+  // Data Quality and Repost Analysis reuse one measure each from the Overview
+  // KPI payload (the issue rate and the repost rate), so that request is also
+  // made while either of those tabs is active.
   } = useDashboardData({
     enabled: isOverview,
-    needsOverview: isQuality,
+    needsOverview: isQuality || isRepost,
   })
 
   const {
@@ -157,6 +166,27 @@ export default function App() {
     enabled: isQuality,
     refreshToken,
     reviewPopulation,
+  })
+
+  const {
+    repost,
+    loading: repostLoading,
+    error: repostError,
+    stale: repostStale,
+    refetch: refetchRepost,
+  } = useRepostAnalysis(selections, {
+    ready: filtersReady,
+    enabled: isRepost,
+    refreshToken,
+  })
+
+  // The drillthrough hook owns its own local controls (rows to display, the
+  // selected job id) and issues the five lookup requests, but only while its
+  // tab is active.
+  const drill = useDrillthrough(selections, {
+    ready: filtersReady,
+    enabled: isDrill,
+    refreshToken,
   })
 
   const meta = overview?.meta || {}
@@ -302,6 +332,22 @@ export default function App() {
               onRetry={refetchQuality}
               onReviewPopulationChange={handleReviewPopulation}
             />
+          </TabPanel>
+
+          <TabPanel id="repost" active={isRepost}>
+            <RepostAnalysisPanel
+              repost={repost}
+              // Reused from the Overview payload, never recomputed here.
+              repostRate={daxMeasures.repost_rate}
+              loading={repostLoading}
+              error={repostError}
+              stale={repostStale}
+              onRetry={refetchRepost}
+            />
+          </TabPanel>
+
+          <TabPanel id="drill" active={isDrill}>
+            <DrillthroughPanel drill={drill} />
           </TabPanel>
         </main>
       </div>

@@ -138,8 +138,13 @@ export function VerticalBarChart({
   valueKey = 'Jobs',
   xLabel,
   yLabel,
+  xAngle = -30,
   tooltip,
 }) {
+  // Short labels are drawn horizontally and centred; rotated ones keep the
+  // "end" anchor so they hang below their tick.
+  const rotated = xAngle !== 0
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
@@ -150,8 +155,8 @@ export function VerticalBarChart({
         <XAxis
           dataKey={categoryKey}
           interval={0}
-          angle={-30}
-          textAnchor="end"
+          angle={xAngle}
+          textAnchor={rotated ? 'end' : 'middle'}
           height={70}
           tick={{ fontSize: 12 }}
           label={axisLabel(xLabel, 'insideBottom', 0, 58)}
