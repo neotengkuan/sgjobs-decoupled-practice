@@ -84,6 +84,10 @@ function barTooltip(tooltip) {
  * about the ranking sits above the chart the way it does in the
  * reference rather than inside the plot box.
  *
+ * `unavailableNote` is rendered instead of the plot when the backend marks
+ * the dataset unavailable, which is where the reference shows its info
+ * message. Without it, an unavailable chart shows only its title.
+ *
  * Sizing note: this element gives the box a definite width and height; the
  * chart inside fills it via its own ResponsiveContainer.
  */
@@ -93,13 +97,16 @@ export function ChartCard({
   isEmpty = false,
   height = 340,
   caption,
+  unavailableNote,
   children,
 }) {
   return (
     <section className="chart-card">
       <h3 className="chart-card__title">{title}</h3>
 
-      {!available ? null : isEmpty ? (
+      {!available ? (
+        unavailableNote || null
+      ) : isEmpty ? (
         <>
           {caption}
           <div className="chart-card__empty" style={{ height }}>

@@ -3,6 +3,7 @@ import { useDashboardData } from './hooks/useDashboardData.js'
 import { useSalaryAnalysis } from './hooks/useSalaryAnalysis.js'
 import { useOpportunityAnalysis } from './hooks/useOpportunityAnalysis.js'
 import { useDemandAnalysis } from './hooks/useDemandAnalysis.js'
+import { useSkillsCategoriesAnalysis } from './hooks/useSkillsCategoriesAnalysis.js'
 import { FilterSidebar } from './components/FilterSidebar.jsx'
 import { BridgeKpis, KpiCards } from './components/KpiCards.jsx'
 import { DaxPanel } from './components/DaxPanel.jsx'
@@ -10,6 +11,7 @@ import { OverviewCharts } from './components/charts/OverviewCharts.jsx'
 import { SalaryAnalysisPanel } from './components/salary/SalaryAnalysisPanel.jsx'
 import { OpportunityAnalysisPanel } from './components/opportunity/OpportunityAnalysisPanel.jsx'
 import { DemandAnalysisPanel } from './components/demand/DemandAnalysisPanel.jsx'
+import { BridgeAnalysisPanel } from './components/bridge/BridgeAnalysisPanel.jsx'
 import { TabPanel, Tabs } from './components/Tabs.jsx'
 import { ErrorBanner, LoadingState } from './components/States.jsx'
 import { StaleBanner } from './components/StaleBanner.jsx'
@@ -21,6 +23,7 @@ const TABS = [
   { id: 'salary', label: '💰 Salary Analysis' },
   { id: 'opportunity', label: '🎯 Opportunity Analysis' },
   { id: 'demand', label: '📈 Demand & Seniority' },
+  { id: 'bridge', label: '🧩 Skills & Categories' },
 ]
 
 /**
@@ -53,6 +56,7 @@ export default function App() {
   const isSalary = activeTab === 'salary'
   const isOpportunity = activeTab === 'opportunity'
   const isDemand = activeTab === 'demand'
+  const isBridge = activeTab === 'bridge'
 
   const {
     descriptors,
@@ -107,6 +111,18 @@ export default function App() {
   } = useDemandAnalysis(selections, {
     ready: filtersReady,
     enabled: isDemand,
+    refreshToken,
+  })
+
+  const {
+    bridge,
+    loading: bridgeLoading,
+    error: bridgeError,
+    stale: bridgeStale,
+    refetch: refetchBridge,
+  } = useSkillsCategoriesAnalysis(selections, {
+    ready: filtersReady,
+    enabled: isBridge,
     refreshToken,
   })
 
@@ -229,6 +245,16 @@ export default function App() {
               error={demandError}
               stale={demandStale}
               onRetry={refetchDemand}
+            />
+          </TabPanel>
+
+          <TabPanel id="bridge" active={isBridge}>
+            <BridgeAnalysisPanel
+              bridge={bridge}
+              loading={bridgeLoading}
+              error={bridgeError}
+              stale={bridgeStale}
+              onRetry={refetchBridge}
             />
           </TabPanel>
         </main>

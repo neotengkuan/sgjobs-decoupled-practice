@@ -434,6 +434,14 @@ code {
   color: var(--danger-text);
 }
 
+/* Neutral note, e.g. "bridge unavailable" in place of a chart. */
+.state--info {
+  background: #eef4fb;
+  border: 1px solid #c3d7ec;
+  color: #2b4c6f;
+  font-size: 13px;
+}
+
 /* Shown when the visible payload predates the last filter change. */
 .state--stale {
   background: #fff8e6;

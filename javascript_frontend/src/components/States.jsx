@@ -13,6 +13,18 @@ export function LoadingState({ label = 'Loading…' }) {
 }
 
 /**
+ * Neutral note, used where the reference shows st.info - for example when a
+ * bridge table is unavailable.
+ */
+export function InfoNote({ children }) {
+  return (
+    <div className="state state--info" role="status">
+      {children}
+    </div>
+  )
+}
+
+/**
  * API failure banner.
  *
  * The two most common causes for a browser-side failure are a backend
