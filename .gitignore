@@ -9,6 +9,5 @@ Procfile.backend
 Procfile.frontend
 
 # data and caches stay local
-*.parquet
 __pycache__/
 *.bak*
