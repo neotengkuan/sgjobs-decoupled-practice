@@ -7,3 +7,8 @@ __pycache__/
 # Legacy deployment helpers
 Procfile.backend
 Procfile.frontend
+
+# data and caches stay local
+*.parquet
+__pycache__/
+*.bak*

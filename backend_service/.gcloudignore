@@ -1,0 +1,2 @@
+# keep the data in Cloud Run uploads (do not inherit .gitignore)
+__pycache__/
