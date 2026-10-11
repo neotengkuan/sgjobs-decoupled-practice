@@ -64,4 +64,4 @@ This project documents the migration of the SGJobs analytics dashboard from a St
                   Main Parquet   Category Bridge   Skill Bridge
 
 ## Data
-The three parquet files (sgjob_v3_clean_features, category_bridge, skill_bridge) are not tracked here to keep the repo small. They are available in [sgjobs-streamlit-dashboard](https://github.com/neotengkuan/sgjobs-streamlit-dashboard); copy them into `data/` and `backend_service/data/` to run locally.
+The three SGJobs parquet files (`sgjob_v3_clean_features`, `sgjob_v3_category_bridge`, `sgjob_v3_skill_bridge`, about 100 MB) are included in `data/` and `backend_service/data/`, so a fork or clone can run everything locally straight away.
