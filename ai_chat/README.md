@@ -5,7 +5,7 @@
 
 | What | Where it runs | Link |
 |---|---|---|
-| Streamlit dashboard (original, reads parquet) | Streamlit Community Cloud | https://PASTE-REAL-LINK.streamlit.app |
+| Streamlit dashboard (original, reads parquet) | Streamlit Community Cloud | https://sgjobs-app-dashboard-2zycahedjxbcetyeda3ut4.streamlit.app/ |
 | FastAPI backend (15 endpoints) | Google Cloud Run | https://sgjobs-api-18035811102.us-central1.run.app/docs |
 | Streamlit front end (calls the API) | Google Cloud Run | https://sgjobs-streamlit-18035811102.us-central1.run.app |
 | React / JavaScript front end (calls the API) | Google Cloud Run | https://sgjobs-react-18035811102.us-central1.run.app |
